@@ -1,0 +1,8 @@
+---
+applications:
+  - name: well-read
+    buildpack: go_buildpack
+    memory: 256M
+    disk_quota: 256M
+    env:
+      GOPACKAGENAME: github.com/cf-routing/well-read
