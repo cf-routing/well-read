@@ -12,7 +12,7 @@ dd if=/dev/urandom of=10k.json bs=1024 count=10
 ### Running the bench
 
 ```bash
-ab -T "application/json" -n 1000 -c 100 -l -p 10k.json http://<your-app-name>.<your-domain>/api/boomerangnsq
+ab -T "application/json" -n 1000 -c 100 -l -p 10k.json http://<your-app-name>.<your-domain>/api/boomerangNsq
 ```
 
 ### Sample AB output
@@ -21,7 +21,7 @@ Server Software:
 Server Hostname:        well-read.dev-full-1.routing.cf-app.com
 Server Port:            80
 
-Document Path:          /api/boomerangnsq
+Document Path:          /api/boomerangNsq
 Document Length:        Variable
 
 Concurrency Level:      100

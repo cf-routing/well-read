@@ -35,6 +35,6 @@ func waitingHandler() http.HandlerFunc {
 }
 
 func main() {
-	http.HandleFunc("/api/boomerangnsq", waitingHandler())
+	http.HandleFunc("/api/boomerangNsq", waitingHandler())
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
