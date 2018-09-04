@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httputil"
+	"time"
 )
 
 func waitingHandler() http.HandlerFunc {
@@ -14,12 +15,18 @@ func waitingHandler() http.HandlerFunc {
 		func(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("received request")
 
+			t1 := time.Now()
+
 			_, err := io.Copy(ioutil.Discard, r.Body)
 			if err != nil {
 				log.Println("failed to discard the body")
 				w.WriteHeader(http.StatusTeapot)
 				return
 			}
+
+			t2 := time.Now()
+
+			fmt.Printf("received body in %s\n", t2.Sub(t1))
 
 			dump, err := httputil.DumpRequest(r, false)
 			if err != nil {
