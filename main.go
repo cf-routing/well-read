@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httputil"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -74,6 +76,17 @@ func collectNetstat() {
 }
 
 func main() {
+	fmt.Printf("args: %#v\n", os.Args)
+
+	if len(os.Args) == 4 && os.Args[1] == "slowpost" {
+		err := makeSlowReq(os.Args[2], os.Args[3])
+		if err != nil {
+			fmt.Println("slow req: %s", err)
+			os.Exit(1)
+		}
+		os.Exit(0)
+	}
+
 	go func() {
 		defer func() {
 			if e := recover(); e != nil {
@@ -90,3 +103,76 @@ func main() {
 	http.HandleFunc("/", waitingHandler())
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
+
+func makeSlowReq(reqURL string, readDelay string) error {
+	dur, err := time.ParseDuration(readDelay)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("will sleep for %s\n", dur)
+
+	req, err := http.NewRequest("POST", reqURL, nil)
+	if err != nil {
+		return err
+	}
+
+	beginningData := []byte(strings.Repeat("k", 9000))
+	remainingData := []byte("=v\n")
+
+	req.ContentLength = int64(len(beginningData) + len(remainingData))
+	req.Body = &slowReader{dur, bytes.NewReader(beginningData), remainingData, 0}
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	respBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("response: %s\n%s\n", resp.Status, respBytes)
+
+	return nil
+}
+
+type slowReader struct {
+	delay         time.Duration
+	reader        io.Reader
+	remainingData []byte
+	state         int
+}
+
+func (r *slowReader) Read(p []byte) (int, error) {
+	switch r.state {
+	case 0:
+		n, err := r.reader.Read(p)
+		if err == io.EOF {
+			r.state = 1
+			return n, nil
+		}
+		return n, err
+
+	case 1:
+		r.state = 2
+		fmt.Printf("sleeping...\n")
+		time.Sleep(r.delay)
+		fmt.Printf("done sleeping...\n")
+
+	case 2:
+		r.state = 3
+		return copy(p, r.remainingData), nil
+
+	case 3:
+		return 0, io.EOF
+	}
+
+	return 0, nil
+}
+
+func (r *slowReader) Close() (err error) { return nil }

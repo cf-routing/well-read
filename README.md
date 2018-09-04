@@ -16,6 +16,7 @@ ab -T "application/json" -n 1000 -c 100 -l -p 10k.json http://<your-app-name>.<y
 ```
 
 ### Sample AB output
+
 ```bash
 Server Software:
 Server Hostname:        well-read.dev-full-1.routing.cf-app.com
@@ -56,3 +57,15 @@ Percentage of the requests served within a certain time (ms)
   99%    803
  100%    840 (longest request)
  ```
+
+### Slow request
+
+```bash
+cf ssh well-read
+```
+
+send post request to app with some data, but delay sending all data by 10s (right before the end)
+
+```bash
+/home/vcap/app/bin/well-read slowpost http://<your-app-name>.<your-domain>/api/boomerangnsq 10s
+```
