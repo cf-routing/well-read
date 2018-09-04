@@ -19,6 +19,11 @@ func waitingHandler() http.HandlerFunc {
 		func(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("received request")
 
+			customHeader := r.Header.Get("User-Agent")
+			if customHeader == "well-read" {
+				fmt.Printf("received request with user-agent=well-read\n")
+			}
+
 			t1 := time.Now()
 
 			_, err := io.Copy(ioutil.Discard, r.Body)
@@ -31,6 +36,10 @@ func waitingHandler() http.HandlerFunc {
 			t2 := time.Now()
 
 			fmt.Printf("received body in %s\n", t2.Sub(t1))
+
+			if t2.Sub(t1) > time.Second {
+				fmt.Printf("received body slower than 1s: %s\n", t2.Sub(t1))
+			}
 
 			dump, err := httputil.DumpRequest(r, false)
 			if err != nil {
