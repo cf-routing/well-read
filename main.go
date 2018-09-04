@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"net/http/httputil"
+	"os/exec"
+	"strings"
 	"time"
 )
 
@@ -41,7 +43,50 @@ func waitingHandler() http.HandlerFunc {
 		})
 }
 
+var netstatStates = []string{
+	"LISTEN",
+	"ESTABLISHED",
+	"SYN_SENT",
+	"SYN_RECV",
+	"LAST_ACK",
+	"CLOSE_WAIT",
+	"TIME_WAIT",
+	"CLOSED",
+	"CLOSING",
+	"FIN_WAIT1",
+	"FIN_WAIT2",
+}
+
+func collectNetstat() {
+	nt, err := exec.Command("netstat", "-at").CombinedOutput()
+	if err != nil {
+		fmt.Printf("failed to get netstat: %s\n", err)
+		return
+	}
+
+	counts := make([]string, len(netstatStates))
+
+	for i, state := range netstatStates {
+		counts[i] = fmt.Sprintf("%s=%d", state, strings.Count(string(nt), state))
+	}
+
+	fmt.Printf("netstat stats: %s\n", strings.Join(counts, " "))
+}
+
 func main() {
+	go func() {
+		defer func() {
+			if e := recover(); e != nil {
+				fmt.Println("Recovered in netstat: %s", e)
+			}
+		}()
+
+		for {
+			collectNetstat()
+			time.Sleep(1 * time.Second)
+		}
+	}()
+
 	http.HandleFunc("/", waitingHandler())
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
