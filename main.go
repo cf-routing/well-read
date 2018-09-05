@@ -132,6 +132,7 @@ func makeSlowReq(reqURL string, readDelay string) error {
 	req.ContentLength = int64(len(beginningData) + len(remainingData))
 	req.Body = &slowReader{dur, bytes.NewReader(beginningData), remainingData, 0}
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Add("User-Agent", "well-read")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
